@@ -1,0 +1,65 @@
+version: "3.8"
+services: 
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: 'python manage.py runserver 0.0.0.0:8000'
+    container_name: admin-service  
+    ports: 
+      - 8000:8000
+    volumes: 
+      - .:/app
+    depends_on: 
+      - db  
+    networks:
+      - microservice
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: 'python consumer.py'
+    container_name: admin-queue
+    depends_on:
+      - db
+    networks:
+      - microservice
+
+  db:
+    image: mysql:5.7.22
+    container_name: admin-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - .dbdata:/var/lib/mysql
+    ports:
+      - 3307:3306
+    networks:
+      - microservice
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: admin-pma
+    links:
+      - db:db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    restart: always
+    ports:
+      - 8001:80
+    networks:
+      - microservice
+
+
+
+networks:
+  microservice:
+    driver: bridge
+
+
